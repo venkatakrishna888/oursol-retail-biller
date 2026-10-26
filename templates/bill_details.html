@@ -1,0 +1,161 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bill Details - RetailPro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .bill-details-container {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 25px;
+            background: white;
+            border-radius: 10px;
+        }
+
+        .bill-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .summary-item {
+            padding: 12px;
+            background: #f3f4f6;
+            border-radius: 6px;
+        }
+
+        .summary-item strong {
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .bill-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .bill-table th,
+        .bill-table td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        .bill-table th {
+            background: #f3f4f6;
+        }
+
+        .bill-total {
+            text-align: right;
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .bill-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        @media print {
+            .bill-actions,
+            .site-navigation {
+                display: none !important;
+            }
+
+            .bill-details-container {
+                margin: 0;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bill-details-container">
+        <h1>Bill Details</h1>
+
+        <div class="bill-summary">
+            <div class="summary-item">
+                <strong>Bill Number</strong>
+                {{ bill.bill_number }}
+            </div>
+
+            <div class="summary-item">
+                <strong>Bill Date</strong>
+                {{ bill.bill_date }}
+            </div>
+
+            <div class="summary-item">
+                <strong>Payment Method</strong>
+                {{ bill.payment_method }}
+            </div>
+
+            <div class="summary-item">
+                <strong>Payment Status</strong>
+                {{ bill.payment_status }}
+            </div>
+
+            <div class="summary-item">
+                <strong>Bill Status</strong>
+                {{ bill.bill_status }}
+            </div>
+        </div>
+
+        <h2>Products in This Bill</h2>
+
+        <div style="overflow-x: auto;">
+            <table class="bill-table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Unit Price</th>
+                        <th>Quantity</th>
+                        <th>Line Total</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>{{ item.product_name }}</td>
+                        <td>₹{{ "%.2f"|format(item.unit_price) }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>₹{{ "%.2f"|format(item.line_total) }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4">No products found for this bill.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="bill-total">
+            <p>Subtotal: ₹{{ "%.2f"|format(bill.subtotal) }}</p>
+            <p>Discount ({{ bill.discount_percent }}%):
+                - ₹{{ "%.2f"|format(bill.discount_amount) }}
+            </p>
+            <p>Final Amount: ₹{{ "%.2f"|format(bill.final_amount) }}</p>
+        </div>
+
+        <div class="bill-actions">
+            <a href="{{ url_for('transactions') }}">
+                <button type="button">Back to Transactions</button>
+            </a>
+
+            <button type="button" onclick="window.print()">
+                Print Bill
+            </button>
+        </div>
+    </div>
+</body>
+</html>
+```

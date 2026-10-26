@@ -1,0 +1,261 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transactions - RetailPro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+        .transactions-container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+
+        .filter-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: end;
+            margin: 20px 0;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-group label {
+            font-weight: bold;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            background: #fff;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .transactions-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .transactions-table th,
+        .transactions-table td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .transactions-table th {
+            background: #f3f4f6;
+        }
+
+        .action-button {
+            display: inline-block;
+            padding: 8px 12px;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .action-button:hover {
+            background: #1d4ed8;
+        }
+
+        .filter-button {
+            padding: 10px 16px;
+            background: #16a34a;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .reset-button {
+            display: inline-block;
+            padding: 10px 16px;
+            background: #6b7280;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 25px;
+        }
+
+        .page-navigation {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="transactions-container">
+
+        <h1>Transaction History</h1>
+        <p>Search, filter, and view your saved bills.</p>
+
+        <div class="page-navigation">
+            <a href="{{ url_for('home') }}" class="action-button">
+                Back to Dashboard
+            </a>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Search and filter form -->
+        <form method="GET"
+              action="{{ url_for('transactions') }}"
+              class="filter-form">
+
+            <div class="filter-group">
+                <label for="bill_number">Bill Number</label>
+                <input
+                    type="text"
+                    id="bill_number"
+                    name="bill_number"
+                    placeholder="Enter bill number"
+                    value="{{ request.args.get('bill_number', '') }}"
+                >
+            </div>
+
+            <div class="filter-group">
+                <label for="start_date">Start Date</label>
+                <input
+                    type="date"
+                    id="start_date"
+                    name="start_date"
+                    value="{{ request.args.get('start_date', '') }}"
+                >
+            </div>
+
+            <div class="filter-group">
+                <label for="end_date">End Date</label>
+                <input
+                    type="date"
+                    id="end_date"
+                    name="end_date"
+                    value="{{ request.args.get('end_date', '') }}"
+                >
+            </div>
+
+            <div class="filter-group">
+                <label for="payment_status">Payment Status</label>
+                <select id="payment_status" name="payment_status">
+                    <option value=""
+                        {% if not request.args.get('payment_status') %}selected{% endif %}>
+                        All Statuses
+                    </option>
+
+                    <option value="Paid"
+                        {% if request.args.get('payment_status') == 'Paid' %}selected{% endif %}>
+                        Paid
+                    </option>
+
+                    <option value="Pending"
+                        {% if request.args.get('payment_status') == 'Pending' %}selected{% endif %}>
+                        Pending
+                    </option>
+                </select>
+            </div>
+
+            <button type="submit" class="filter-button">
+                Apply Filters
+            </button>
+
+            <a href="{{ url_for('transactions') }}" class="reset-button">
+                Reset
+            </a>
+        </form>
+
+        <!-- Transactions table -->
+        <div class="table-container">
+            <table class="transactions-table">
+                <thead>
+                    <tr>
+                        <th>Bill Number</th>
+                        <th>Subtotal</th>
+                        <th>Discount</th>
+                        <th>Final Amount</th>
+                        <th>Payment Method</th>
+                        <th>Payment Status</th>
+                        <th>Bill Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for bill in bills %}
+                    <tr>
+                        <td>{{ bill.bill_number }}</td>
+
+                        <td>
+                            ₹{{ "%.2f"|format(bill.subtotal|float) }}
+                        </td>
+
+                        <td>
+                            ₹{{ "%.2f"|format(bill.discount_amount|float) }}
+                        </td>
+
+                        <td>
+                            ₹{{ "%.2f"|format(bill.final_amount|float) }}
+                        </td>
+
+                        <td>{{ bill.payment_method }}</td>
+                        <td>{{ bill.payment_status }}</td>
+                        <td>{{ bill.bill_status }}</td>
+
+                        <td>
+                            <a
+                                href="{{ url_for('bill_details', bill_id=bill.bill_id) }}"
+                                class="action-button"
+                            >
+                                View Details
+                            </a>
+                        </td>
+                    </tr>
+
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="empty-message">
+                            No transactions found for the selected filters.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </main>
+</body>
+</html>
+```

@@ -1,0 +1,369 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Products | RetailPro</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+        .product-form label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+
+        .product-form input {
+            display: block;
+            box-sizing: border-box;
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+        }
+
+        .product-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .product-table th,
+        .product-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .product-table th {
+            background: #eff6ff;
+        }
+
+        .status-active {
+            color: green;
+            font-weight: bold;
+        }
+
+        .status-inactive {
+            color: #dc2626;
+            font-weight: bold;
+        }
+
+        .btn-danger {
+            display: inline-block;
+            padding: 9px 12px;
+            border: none;
+            border-radius: 5px;
+            background: #dc2626;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+
+        .flash-message {
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+        }
+
+        .flash-success {
+            color: #166534;
+            background: #dcfce7;
+        }
+
+        .flash-error {
+            color: #991b1b;
+            background: #fee2e2;
+        }
+
+        .edit-form {
+            min-width: 180px;
+            padding-top: 15px;
+        }
+
+        .edit-form input {
+            box-sizing: border-box;
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0 12px;
+        }
+
+        .product-actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        @media (max-width: 600px) {
+            .product-table th,
+            .product-table td {
+                padding: 8px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <aside class="sidebar">
+            <h2>RetailPro</h2>
+            <a href="/">Dashboard</a>
+            <a href="/products" class="active">Products</a>
+            <a href="{{ url_for('create_bill') }}">Create Bill</a>
+            <a href="{{ url_for('transactions') }}">Transactions</a>
+        </aside>
+
+        <main class="main-content">
+
+            <header class="header">
+                <h1>Manage Products</h1>
+                <p>Add products, update prices, manage stock, and deactivate products.</p>
+            </header>
+
+            <!-- Flash Messages -->
+            <section class="section">
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <p class="flash-message {{ 'flash-error' if category == 'error' else 'flash-success' }}">
+                                {{ message }}
+                            </p>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+            </section>
+
+            <!-- Add New Product -->
+            <section class="section">
+
+                <h2>Add New Product</h2>
+
+                <form action="{{ url_for('add_product') }}"
+                      method="POST"
+                      class="product-form">
+
+                    <label for="product_name">Product Name</label>
+                    <input
+                        type="text"
+                        id="product_name"
+                        name="product_name"
+                        maxlength="100"
+                        required
+                    >
+
+                    <label for="unit_price">Unit Price (₹)</label>
+                    <input
+                        type="number"
+                        id="unit_price"
+                        name="unit_price"
+                        min="0.01"
+                        step="0.01"
+                        required
+                    >
+
+                    <label for="stock_quantity">Stock Quantity</label>
+                    <input
+                        type="number"
+                        id="stock_quantity"
+                        name="stock_quantity"
+                        min="0"
+                        step="1"
+                        required
+                    >
+
+                    <button type="submit" class="btn">
+                        Add Product
+                    </button>
+
+                </form>
+
+            </section>
+
+            <!-- Product Inventory -->
+            <section class="section">
+
+                <h2>Product Inventory</h2>
+
+                <div style="overflow-x: auto;">
+
+                    <table class="product-table">
+
+                        <thead>
+                            <tr>
+                                <th>Product ID</th>
+                                <th>Product Name</th>
+                                <th>Unit Price</th>
+                                <th>Stock</th>
+                                <th>Status</th>
+                                <th>Edit Product</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            {% for product in products %}
+
+                                <tr>
+
+                                    <td>
+                                        {{ product.product_id }}
+                                    </td>
+
+                                    <td>
+                                        {{ product.product_name }}
+                                    </td>
+
+                                    <td>
+                                        ₹{{ "%.2f"|format(product.unit_price) }}
+                                    </td>
+
+                                    <td>
+                                        {{ product.stock_quantity }}
+                                    </td>
+
+                                    <td>
+                                        {% if product.is_active %}
+                                            <span class="status-active">Active</span>
+                                        {% else %}
+                                            <span class="status-inactive">Inactive</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- Edit Product -->
+                                    <td>
+
+                                        {% if product.is_active %}
+
+                                            <details>
+                                                <summary class="btn" style="cursor: pointer;">
+                                                    Edit
+                                                </summary>
+
+                                                <form
+                                                    action="{{ url_for('edit_product', product_id=product.product_id) }}"
+                                                    method="POST"
+                                                    class="edit-form"
+                                                >
+
+                                                    <label>Product Name</label>
+                                                    <input
+                                                        type="text"
+                                                        name="product_name"
+                                                        value="{{ product.product_name }}"
+                                                        maxlength="100"
+                                                        required
+                                                    >
+
+                                                    <label>Unit Price (₹)</label>
+                                                    <input
+                                                        type="number"
+                                                        name="unit_price"
+                                                        value="{{ product.unit_price }}"
+                                                        min="0.01"
+                                                        step="0.01"
+                                                        required
+                                                    >
+
+                                                    <label>Stock Quantity</label>
+                                                    <input
+                                                        type="number"
+                                                        name="stock_quantity"
+                                                        value="{{ product.stock_quantity }}"
+                                                        min="0"
+                                                        step="1"
+                                                        required
+                                                    >
+
+                                                    <button type="submit" class="btn">
+                                                        Save Changes
+                                                    </button>
+
+                                                </form>
+
+                                            </details>
+
+                                        {% else %}
+
+                                            <span>Unavailable</span>
+
+                                        {% endif %}
+
+                                    </td>
+
+                                    <!-- Deactivate Product -->
+                                    <td>
+
+                                        {% if product.is_active %}
+
+                                            <form
+                                                action="{{ url_for('deactivate_product', product_id=product.product_id) }}"
+                                                method="POST"
+                                                onsubmit="return confirm('Are you sure you want to deactivate this product? It will no longer be available for new bills.');"
+                                            >
+
+                                                <button
+                                                    type="submit"
+                                                    class="btn-danger"
+                                                >
+                                                    Deactivate
+                                                </button>
+
+                                            </form>
+
+                                        {% else %}
+
+                                            <span class="status-inactive">
+                                                Deactivated
+                                            </span>
+
+                                        {% endif %}
+
+                                    </td>
+
+                                </tr>
+
+                            {% else %}
+
+                                <tr>
+                                    <td colspan="7" style="text-align: center;">
+                                        No products found.
+                                    </td>
+                                </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                <br>
+
+                <a href="{{ url_for('home') }}" class="btn">
+                    Back to Dashboard
+                </a>
+
+            </section>
+
+        </main>
+
+    </div>
+
+</body>
+</html>
+```

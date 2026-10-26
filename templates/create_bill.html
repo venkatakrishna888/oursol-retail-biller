@@ -1,0 +1,566 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Bill | RetailPro</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f4f6f9;
+            color: #222;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+        }
+
+        h1 {
+            color: #1e3a8a;
+            margin-top: 0;
+        }
+
+        .description {
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        .navigation {
+            margin-bottom: 20px;
+        }
+
+        .navigation a {
+            margin-right: 15px;
+            color: #2563eb;
+            text-decoration: none;
+        }
+
+        .navigation a:hover {
+            text-decoration: underline;
+        }
+
+        .flash {
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        .flash.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .flash.success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th,
+        td {
+            padding: 12px 8px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background: #eff6ff;
+        }
+
+        select,
+        input {
+            width: 100%;
+            min-width: 90px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 15px;
+        }
+
+        select:focus,
+        input:focus {
+            outline: 2px solid #93c5fd;
+            border-color: #2563eb;
+        }
+
+        button,
+        .button-link {
+            display: inline-block;
+            padding: 11px 16px;
+            border: none;
+            border-radius: 5px;
+            background: #2563eb;
+            color: white;
+            font-size: 14px;
+            text-decoration: none;
+            cursor: pointer;
+            margin: 5px 5px 5px 0;
+        }
+
+        button:hover,
+        .button-link:hover {
+            background: #1d4ed8;
+        }
+
+        .remove-button {
+            background: #dc2626;
+        }
+
+        .remove-button:hover {
+            background: #b91c1c;
+        }
+
+        .summary {
+            max-width: 400px;
+            margin: 25px 0 25px auto;
+            padding: 18px;
+            background: #f8fafc;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            padding: 8px 0;
+        }
+
+        .summary-row.total {
+            border-top: 2px solid #ddd;
+            margin-top: 8px;
+            padding-top: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #166534;
+        }
+
+        .form-group {
+            margin-top: 20px;
+            max-width: 400px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .form-group input,
+        .form-group select {
+            margin-bottom: 10px;
+        }
+
+        .help-text {
+            color: #666;
+            font-size: 13px;
+            margin-top: 5px;
+        }
+
+        .submit-button {
+            background: #15803d;
+            font-size: 16px;
+            padding: 13px 20px;
+        }
+
+        .submit-button:hover {
+            background: #166534;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 15px;
+                margin: 10px auto;
+            }
+
+            th,
+            td {
+                padding: 8px 5px;
+            }
+
+            .summary {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+
+        <h1>RetailPro — Create Bill</h1>
+
+        <p class="description">
+            Select products, enter quantities, apply a discount,
+            and generate a customer bill.
+        </p>
+
+        <div class="navigation">
+            <a href="/">Dashboard</a>
+            <a href="/products">Products</a>
+            <a href="/transactions">Transactions</a>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash {{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form id="billForm" action="/generate-bill" method="POST">
+
+            <h2>Products</h2>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Quantity</th>
+                            <th>Unit Price</th>
+                            <th>Line Total</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody
+                        id="productRows"
+                        data-products='{{ products | tojson | forceescape }}'>
+                    </tbody>
+                </table>
+            </div>
+
+            <button type="button" id="addProduct">
+                + Add Another Product
+            </button>
+
+            <div class="summary">
+
+                <div class="summary-row">
+                    <span>Subtotal</span>
+                    <span>₹<span id="subtotal">0.00</span></span>
+                </div>
+
+                <div class="summary-row">
+                    <span>Discount</span>
+                    <span>₹<span id="discount_amount">0.00</span></span>
+                </div>
+
+                <div class="summary-row total">
+                    <span>Final Amount</span>
+                    <span>₹<span id="final_amount">0.00</span></span>
+                </div>
+
+            </div>
+
+            <div class="form-group">
+                <label for="discount">Discount Percentage (%)</label>
+
+                <input
+                    type="number"
+                    id="discount"
+                    name="discount"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    value="0"
+                    required
+                >
+
+                <p class="help-text">
+                    Enter a discount from 0% to 100%. Tax is not included.
+                </p>
+            </div>
+
+            <div class="form-group">
+                <label for="payment_method">Payment Method</label>
+
+                <select
+                    id="payment_method"
+                    name="payment_method"
+                    required
+                >
+                    <option value="">Choose payment method</option>
+                    <option value="Cash">Cash</option>
+                    <option value="UPI">UPI</option>
+                    <option value="Card">Card</option>
+                </select>
+            </div>
+
+            <button type="submit" class="submit-button">
+                Generate Bill
+            </button>
+
+            <a href="/transactions" class="button-link">
+                Cancel
+            </a>
+
+        </form>
+    </div>
+
+    <script>
+        const products = JSON.parse(
+            document.getElementById("productRows").dataset.products
+        );
+
+        const rows = document.getElementById("productRows");
+        const discountInput = document.getElementById("discount");
+
+        function addProductRow() {
+            const row = document.createElement("tr");
+
+            // Product dropdown
+            const productCell = document.createElement("td");
+            const select = document.createElement("select");
+
+            select.name = "product_id[]";
+            select.required = true;
+
+            const placeholder = document.createElement("option");
+            placeholder.value = "";
+            placeholder.textContent = "Choose product";
+            select.appendChild(placeholder);
+
+            products.forEach(product => {
+                const option = document.createElement("option");
+
+                option.value = product.product_id;
+
+                option.textContent =
+                    `${product.product_name} - ₹${Number(product.unit_price).toFixed(2)} (Stock: ${product.stock_quantity})`;
+
+                option.dataset.price = product.unit_price;
+                option.dataset.stock = product.stock_quantity;
+
+                select.appendChild(option);
+            });
+
+            productCell.appendChild(select);
+
+            // Quantity input
+            const quantityCell = document.createElement("td");
+            const quantity = document.createElement("input");
+
+            quantity.type = "number";
+            quantity.name = "quantity[]";
+            quantity.min = "1";
+            quantity.step = "1";
+            quantity.value = "1";
+            quantity.required = true;
+
+            quantityCell.appendChild(quantity);
+
+            // Price display
+            const priceCell = document.createElement("td");
+            priceCell.textContent = "₹0.00";
+
+            // Line total display
+            const totalCell = document.createElement("td");
+            totalCell.textContent = "₹0.00";
+
+            // Remove row button
+            const actionCell = document.createElement("td");
+            const removeButton = document.createElement("button");
+
+            removeButton.type = "button";
+            removeButton.className = "remove-button";
+            removeButton.textContent = "Remove";
+
+            removeButton.addEventListener("click", () => {
+                if (rows.children.length > 1) {
+                    row.remove();
+                } else {
+                    select.value = "";
+                    quantity.value = "1";
+                }
+
+                calculateBill();
+            });
+
+            actionCell.appendChild(removeButton);
+
+            row.append(
+                productCell,
+                quantityCell,
+                priceCell,
+                totalCell,
+                actionCell
+            );
+
+            rows.appendChild(row);
+
+            select.addEventListener("change", calculateBill);
+            quantity.addEventListener("input", calculateBill);
+
+            calculateBill();
+        }
+
+        function calculateBill() {
+            let subtotal = 0;
+
+            Array.from(rows.children).forEach(row => {
+                const select = row.querySelector("select");
+
+                const quantityInput = row.querySelector(
+                    'input[name="quantity[]"]'
+                );
+
+                const selected = select.options[select.selectedIndex];
+
+                const price = Number(selected.dataset.price || 0);
+                const stock = Number(selected.dataset.stock || 0);
+                const quantity = Number(quantityInput.value);
+
+                const validQuantity =
+                    Number.isInteger(quantity) && quantity >= 1;
+
+                row.cells[2].textContent =
+                    `₹${price.toFixed(2)}`;
+
+                const lineTotal =
+                    validQuantity && select.value
+                        ? price * quantity
+                        : 0;
+
+                row.cells[3].textContent =
+                    `₹${lineTotal.toFixed(2)}`;
+
+                if (
+                    select.value &&
+                    validQuantity &&
+                    quantity <= stock
+                ) {
+                    subtotal += lineTotal;
+                }
+            });
+
+            const discount = Number(discountInput.value);
+
+            const validDiscount =
+                Number.isFinite(discount) &&
+                discount >= 0 &&
+                discount <= 100;
+
+            const appliedDiscount = validDiscount ? discount : 0;
+
+            const discountAmount =
+                subtotal * appliedDiscount / 100;
+
+            document.getElementById("subtotal").textContent =
+                subtotal.toFixed(2);
+
+            document.getElementById("discount_amount").textContent =
+                discountAmount.toFixed(2);
+
+            document.getElementById("final_amount").textContent =
+                (subtotal - discountAmount).toFixed(2);
+        }
+
+        // Add another product row
+        document.getElementById("addProduct").addEventListener(
+            "click",
+            addProductRow
+        );
+
+        // Recalculate when discount changes
+        discountInput.addEventListener("input", calculateBill);
+
+        // Validate the form before submission
+        document.getElementById("billForm").addEventListener(
+            "submit",
+            event => {
+                const selectedIds = [];
+                let valid = true;
+
+                Array.from(rows.children).forEach(row => {
+                    const select = row.querySelector("select");
+
+                    const quantityInput = row.querySelector(
+                        'input[name="quantity[]"]'
+                    );
+
+                    const product = products.find(
+                        p => String(p.product_id) === select.value
+                    );
+
+                    const quantity = Number(quantityInput.value);
+
+                    if (
+                        !product ||
+                        !Number.isInteger(quantity) ||
+                        quantity < 1 ||
+                        quantity > Number(product.stock_quantity) ||
+                        selectedIds.includes(select.value)
+                    ) {
+                        valid = false;
+                    } else {
+                        selectedIds.push(select.value);
+                    }
+                });
+
+                const discount = Number(discountInput.value);
+
+                if (
+                    !Number.isFinite(discount) ||
+                    discount < 0 ||
+                    discount > 100
+                ) {
+                    valid = false;
+                }
+
+                const paymentMethod =
+                    document.getElementById("payment_method").value;
+
+                if (!["Cash", "UPI", "Card"].includes(paymentMethod)) {
+                    valid = false;
+                }
+
+                if (!valid) {
+                    event.preventDefault();
+
+                    alert(
+                        "Please select valid products, enter quantities " +
+                        "within available stock, choose different products " +
+                        "for each row, and check the discount and payment method."
+                    );
+                }
+            }
+        );
+
+        // Display the first product row
+        addProductRow();
+    </script>
+
+</body>
+</html>
+```

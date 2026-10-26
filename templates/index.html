@@ -1,0 +1,165 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retail Biller & Sales Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="container">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <h2>RetailPro</h2>
+        <a href="/" class="active">Dashboard</a>
+        <a href="/products">Products</a>
+        <a href="/create-bill">Create Bill</a>
+        <a href="/transactions">Transactions</a>
+    </aside>
+
+    <!-- Main Dashboard -->
+    <main class="main-content">
+
+        <header class="header">
+            <h1>Sales Dashboard</h1>
+            <p>Welcome to your Retail Management System.</p>
+            <p>Active products: {{ product_count }}</p>
+        </header>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <p class="{{ 'error-message' if category == 'error' else 'success-message' }}">
+                        {{ message }}
+                    </p>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Date Filter -->
+        <section class="section">
+            <h2>Filter Sales by Date</h2>
+
+            <form method="GET" action="{{ url_for('home') }}">
+                <label for="start_date">Start Date:</label>
+                <input
+                    type="date"
+                    id="start_date"
+                    name="start_date"
+                    value="{{ start_date }}"
+                >
+
+                <label for="end_date">End Date:</label>
+                <input
+                    type="date"
+                    id="end_date"
+                    name="end_date"
+                    value="{{ end_date }}"
+                >
+
+                <button type="submit" class="btn">Apply Filter</button>
+                <a href="{{ url_for('home') }}" class="btn">Clear Filter</a>
+            </form>
+        </section>
+
+        <!-- Dashboard Cards -->
+        <div class="cards">
+
+            <section class="card">
+                <h3>Total Sales</h3>
+                <p>₹{{ "%.2f"|format(total_sales|float) }}</p>
+            </section>
+
+            <section class="card">
+                <h3>Completed Bills</h3>
+                <p>{{ completed_bills }}</p>
+            </section>
+
+            <section class="card">
+                <h3>Average Bill Value</h3>
+                <p>₹{{ "%.2f"|format(average_bill_value|float) }}</p>
+            </section>
+
+            <section class="card">
+                <h3>Total Products</h3>
+                <p>{{ product_count }}</p>
+            </section>
+
+        </div>
+
+        <!-- Best-Selling Product -->
+        <section class="section">
+            <h2>Best-Selling Product</h2>
+
+            {% if best_seller %}
+                <p>
+                    <strong>Product:</strong>
+                    {{ best_seller.product_name }}
+                </p>
+
+                <p>
+                    <strong>Quantity Sold:</strong>
+                    {{ best_seller.total_quantity }}
+                </p>
+            {% else %}
+                <p>No completed sales available for this date range.</p>
+            {% endif %}
+        </section>
+
+        <!-- Sales by Payment Method -->
+        <section class="section">
+            <h2>Sales by Payment Method</h2>
+
+            {% if payment_sales %}
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th style="padding: 12px; text-align: left;">
+                                Payment Method
+                            </th>
+                            <th style="padding: 12px; text-align: left;">
+                                Total Sales
+                            </th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for payment in payment_sales %}
+                            <tr>
+                                <td style="padding: 12px;">
+                                    {{ payment.payment_method }}
+                                </td>
+
+                                <td style="padding: 12px;">
+                                    ₹{{ "%.2f"|format(payment.payment_sales|float) }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No completed sales for this date range.</p>
+            {% endif %}
+        </section>
+
+        <!-- Quick Actions -->
+        <section class="section">
+            <h2>Quick Actions</h2>
+
+            <div class="actions">
+                <a href="/products" class="btn">Manage Products</a>
+                <a href="/create-bill" class="btn">Create Bill</a>
+                <a href="/transactions" class="btn">Transaction History</a>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+</body>
+</html>
+```
